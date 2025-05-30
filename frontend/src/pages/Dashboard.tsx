@@ -44,14 +44,80 @@ const Dashboard = () => {
 
 
 
+
+
+
+
+
+
+
+    const handleDeletePortfolio = async (id: number) => {
+        try {
+            const response = await fetch(`http://localhost:8080/api/portfolios/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+
+            if (response.ok) {
+                console.log(`Portfolio s ID ${id} bylo smazáno.`);
+                // Po úspěšném smazání aktualizujeme seznam portfolií
+                //setPortfolios(portfolios.filter(portfolio => portfolio.id !== id));
+            } else {
+                console.error('Chyba při mazání portfolia:', response.status);
+            }
+        } catch (error) {
+            console.error('Došlo k chybě při mazání:', error);
+        }
+    };
+
+    const handleaddPortfolio = async () => {
+        try {
+
+        }catch (err: any) {
+            console.error(err.message);
+        }
+    };
+
+    const handleCheckPrices = async () => {
+      try {
+
+
+      }catch (err: any) {
+          console.error(err.message);
+      }
+    };
+
+
     return (
         <div>
             <nav>
                 <Link to="/login">login</Link>
                 <Link to="/register">register</Link>
             </nav>
-            <h1>Dashboard</h1>
-            <p>Welcome to the dashboard!</p>
+
+
+            <div className="welcome">
+                <h1>Dashboard</h1>
+                <p>Welcome to the dashboard!</p>
+                <button onClick={handleaddPortfolio}>Add portfolio</button>
+                <h2>Your Portfolios</h2>
+            </div>
+
+
+            {portfolios.map((portfolio: any) => (
+                <div className="portfolio" key={portfolio.id}>
+                    <h3>{portfolio.name}</h3>
+
+
+                    <div className="deleteButton">
+                        <button onClick={() => handleDeletePortfolio(portfolio.id)}>Delete</button>
+                    </div>
+                </div>
+
+            ))}
+
         </div>
     );
 };

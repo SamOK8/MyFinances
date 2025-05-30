@@ -1,7 +1,10 @@
 package com.example.myfinances.controller;
 
+import com.example.myfinances.AssetType;
+import com.example.myfinances.DTO.StockDataDTO;
 import com.example.myfinances.model.Portfolio;
 import com.example.myfinances.model.User;
+import com.example.myfinances.service.AssetService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +20,7 @@ import java.util.List;
 @RequestMapping("/api/portfolio")
 public class PortfolioController {
     private final com.example.myfinances.repositary.PortfolioRepository portfolioRepository;
+    private final AssetService assetService;
 
 
 
@@ -35,5 +39,10 @@ public class PortfolioController {
         //portfolioService.deletePortfolio(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+    @GetMapping("/stock/quote/{type}/{symbol}")
+    public StockDataDTO getPrice(@PathVariable AssetType type, @PathVariable String symbol) {
 
+
+        return assetService.getPrice(type, symbol);
+    }
 }

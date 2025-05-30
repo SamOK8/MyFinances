@@ -1,1 +1,67 @@
+.portfolio{
+    border: 2px solid #292929;
+    border-radius: 4px;
+}
+.deleteButton{
+    button:hover{
+        background-color: #ff4d4d;
+        border-color: #ff0000;
+    }
+}
+
+
+
+
+.welcome{
+    grid-area: welcome;
+}
+
+.
+
+.footer{
+    grid-area: footer;
+}
+
+button{
+    color: #ffffff;
+    border-radius: 4px;
+    background-color: #1a1a1a;
+    border: 1px solid transparent;
+    padding: 6px;
+}
+button:hover {
+    background-color: #292929;
+    border-color: #4bf0ff;
+}
+
+
+button:active{
+    background-color: #454545;
+}
+body {
+    background-color: #000000;
+    font-family: Arial, sans-serif;
+    color: #ffffff;
+    text-shadow: 2px 2px 5px gray;
+}
+
+nav a{
+    color: #ffffff;
+    text-decoration: none;
+    text-shadow: none;
+    padding: 5px;
+    background-color: #1a1a1a;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    margin: 6px;
+    float: right;
+}
+
+nav a:hover {
+    color: #ffffff;
+    background-color: #292929;
+    border-color: #4bf0ff;
+
+}
+
 
