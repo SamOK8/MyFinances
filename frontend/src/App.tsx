@@ -10,7 +10,6 @@ function App() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        // Check if the user is authenticated
         if (location.pathname !== "/login" && location.pathname !== "/register" && !localStorage.getItem("token")){
             navigate("/login");
         }

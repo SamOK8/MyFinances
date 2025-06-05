@@ -4,9 +4,11 @@ import com.example.myfinances.AssetType;
 import com.example.myfinances.DTO.StockDataDTO;
 import com.example.myfinances.model.Portfolio;
 import com.example.myfinances.model.User;
+import com.example.myfinances.security.JwtUtil;
 import com.example.myfinances.service.AssetService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -23,22 +25,20 @@ public class PortfolioController {
     private final AssetService assetService;
 
 
-
     @GetMapping("/by-user")
     public List<Portfolio> getPortfolioByUser(Authentication authentication) {
-        //System.out.println(authentication.getName());
 
-        String userEmail = "saminkoh@gmail.com";
-
+        String userEmail = (String) authentication.getPrincipal();
         List<Portfolio> portfolios = portfolioRepository.findAllByUserEmail(userEmail);
         return new ArrayList<>(portfolios);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePortfolio(@PathVariable Long id) {
-        //portfolioService.deletePortfolio(id);
+        portfolioRepository.deleteById(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
     @GetMapping("/stock/quote/{type}/{symbol}")
     public StockDataDTO getPrice(@PathVariable AssetType type, @PathVariable String symbol) {
 
