@@ -15,7 +15,7 @@ public class Asset {
 
     private String name;
     private String type;
-    private int quantity;
+    private double quantity;
     private String symbol;
 
     @ManyToOne

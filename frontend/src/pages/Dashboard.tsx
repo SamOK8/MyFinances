@@ -11,7 +11,6 @@ class Portfolio {
 class User {
     id: number;
     username: string;
-    password: string;
 }
 
 class Asset {
@@ -20,6 +19,7 @@ class Asset {
     type: string;
     quantity: number;
     symbol: string;
+    currentPrice?: number;
 }
 
 const Dashboard = () => {
@@ -49,6 +49,7 @@ const Dashboard = () => {
 
             setPortfolios(data);
             console.log(portfolios);
+            console.log(data);
             if (!response.ok) {
                 throw new Error(response.statusText);
             }
@@ -86,9 +87,10 @@ const Dashboard = () => {
         }
     };
 
-    const handleAddPortfolio = async () => {
+    const handleAddPortfolio = async (e: React.FormEvent) => {
+        e.preventDefault();
         try {
-            const response = await fetch("http://localhost:8080/api/portfolio", {
+            const response = await fetch("http://localhost:8080/api/portfolio/add", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -111,18 +113,12 @@ const Dashboard = () => {
 
     };
 
-    const handleCheckPrices = async () => {
-      try {
 
-
-      }catch (err: any) {
-          console.error(err.message);
-      }
-    };
 
     function addAsset() {
         if (!portfolio) return;
         const newAsset = new Asset();
+        newAsset.type = "stock";
         const updatedAssets = portfolio.assets ? [...portfolio.assets, newAsset] : [newAsset];
         setPortfolio({ ...portfolio, assets: updatedAssets });
     }
@@ -146,19 +142,25 @@ const Dashboard = () => {
         return (
             <form key={i}>
                 <label></label>
-                <input type="text" placeholder="Asset Name" name="assetName" required/>
+                <input type="text" placeholder="Asset Name" name="assetName" required onChange={(e) => {
+                    portfolio.assets[i].name = e.target.value;
+                }}/>
                 <label></label>
-                <input type="number" placeholder="quantity" name="assetQuantity"/>
+                <input type="number" placeholder="quantity" min={0} name="assetQuantity" required onChange={(e) => {
+                    portfolio.assets[i].quantity = parseFloat(e.target.value);
+                }}/>
                 <br/>
                 <label>Official Ticker symbol: </label>
-                <input type="text" placeholder="symbol" name="assetSymbol"/>
+                <input type="text" placeholder="symbol" name="assetSymbol" required onChange={(e) => {
+                    portfolio.assets[i].symbol = e.target.value;
+                }}/>
+
 
                 <br/>
                 <label htmlFor="assetType">Choose asset type: </label>
                 <select
                     id="assetType"
                     name="assetType"
-                    value={asset.type || 'stock'}
                     onChange={e => handleAssetTypeChange(i, e.target.value)}>
                     <option value="stock">Stock</option>
                     <option value="crypto">Crypto</option>
@@ -210,6 +212,26 @@ const Dashboard = () => {
             {portfolios.map((portfolio: any) => (
                 <div className="portfolio" key={portfolio.id}>
                     <h3>{portfolio.name}</h3>
+
+
+
+
+
+
+
+
+                    {portfolio.assets.map((asset: Asset) => (
+                        <li key={asset.id}>
+                            <strong>{asset.name} ({asset.symbol})</strong>
+                            <br />
+                            Type: {asset.type}, Quantity: {asset.quantity}
+                            {asset.currentPrice !== undefined && asset.currentPrice !== null && `, Current Price: $${asset.currentPrice.toFixed(2)}`}
+                            <br />
+                            value: ${(asset.currentPrice) * (asset.quantity)}
+                        </li>
+                    ))}
+
+
 
 
                     <div className="deleteButton">
