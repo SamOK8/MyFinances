@@ -1,11 +1,22 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, {useEffect, useState} from "react";
+import {useNavigate} from "react-router-dom";
 
 const Login = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState("test@example.com");
     const [password, setPassword] = useState("password123");
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        if (error) {
+            const timer = setTimeout(() => {
+                setError(''); // po 3 sekundách smaž chybu
+            }, 3000);
+
+            // 🧹 Vyčištění timeoutu, pokud se `error` změní dříve
+            return () => clearTimeout(timer);
+        }
+    }, [error]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,8 +46,9 @@ const Login = () => {
     };
 
     return (
-        <div>
-            <form onSubmit={handleLogin}>
+        <div className="loginForm">
+
+            <form onSubmit={handleLogin} className="box" >
                 <label htmlFor="email">E-mail:</label>
                 <input type="email" id="email" name="email" onChange={(e) => setEmail(e.target.value)} required/>
                 <br/>
@@ -44,9 +56,13 @@ const Login = () => {
                 <label htmlFor="password">Password:</label>
                 <input type="password" id="password" name="password" onChange={(e) => setPassword(e.target.value)} required/>
                 <br/>
-
-                <button type="submit">Login</button>
+                <div className="loginButtons">
+                    <button type="submit">Login</button>
+                    <button onClick={()=> navigate("/register")}>New account: Register</button>
+                </div>
+                {error && <p className="errorText">{error}</p>}
             </form>
+
         </div>
     );
 };

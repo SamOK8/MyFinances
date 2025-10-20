@@ -1,8 +1,8 @@
-import {Form, Link} from "react-router-dom";
+import {Link} from "react-router-dom";
 import {useEffect, useState} from "react";
 
 class Portfolio {
-    id: number;
+    id: number | undefined;
     name: string;
     user: User;
     assets: Asset[];
@@ -210,7 +210,7 @@ const Dashboard = () => {
             <h2>Your Portfolios</h2>
 
             {portfolios.map((portfolio: any) => (
-                <div className="portfolio" key={portfolio.id}>
+                <div className="box" key={portfolio.id}>
                     <h3>{portfolio.name}</h3>
 
 
@@ -221,7 +221,7 @@ const Dashboard = () => {
 
 
                     {portfolio.assets.map((asset: Asset) => (
-                        <li key={asset.id}>
+                        <li key={asset.id} className="portfolioList">
                             <strong>{asset.name} ({asset.symbol})</strong>
                             <br />
                             Type: {asset.type}, Quantity: {asset.quantity}
