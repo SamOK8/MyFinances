@@ -11,4 +11,5 @@ public class AssetDTO {
     private double quantity;
     private String symbol;
     private double currentPrice;
+    private String error;
 }

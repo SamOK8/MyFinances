@@ -1,12 +1,13 @@
 import {Link} from "react-router-dom";
 import {useEffect, useState} from "react";
+// import '.src/App.css';
 
-// Replace classes with interfaces and make fields optional to avoid definite-assignment errors
 interface Portfolio {
     id?: number;
     name?: string;
     user?: User;
     assets?: Asset[];
+    value?: number;
 }
 
 interface User {
@@ -21,6 +22,7 @@ interface Asset {
     quantity?: number;
     symbol?: string;
     currentPrice?: number;
+    error?: string;
 }
 
 const Dashboard = () => {
@@ -30,6 +32,8 @@ const Dashboard = () => {
     const [isVisible, setIsVisible] = useState(false);
     const [, setError] = useState<string>("");
     const apiUrl = import.meta.env.VITE_API_URL ?? 'http://localhost:8080';
+    const [userNetWorth, setUserNetWorth] = useState(0);
+    //, setUserNetWorth
 
 
 
@@ -114,6 +118,10 @@ const Dashboard = () => {
 
     };
 
+    // const handleEditPortfolio = async (id: number) => {
+    //
+    // }
+
 
 
     function addAsset() {
@@ -142,122 +150,160 @@ const Dashboard = () => {
 
     function assetForm(_asset: Asset, i: number){
         return (
-            <form key={i}>
-                <label></label>
-                <input type="text" placeholder="Asset Name" name="assetName" required onChange={(e) => {
-                    const value = e.target.value;
-                    setPortfolio(prev => {
-                        if (!prev) return prev;
-                        const assets = prev.assets ? [...prev.assets] : [];
-                        const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
-                        a.name = value;
-                        assets[i] = a;
-                        return { ...prev, assets };
-                    });
-                }}/>
-                <label></label>
-                <input type="number" placeholder="quantity" min={0} name="assetQuantity" required onChange={(e) => {
-                    const value = parseFloat(e.target.value || '0');
-                    setPortfolio(prev => {
-                        if (!prev) return prev;
-                        const assets = prev.assets ? [...prev.assets] : [];
-                        const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
-                        a.quantity = value;
-                        assets[i] = a;
-                        return { ...prev, assets };
-                    });
-                }}/>
-                <br/>
-                <label>Official Ticker symbol: </label>
-                <input type="text" placeholder="symbol" name="assetSymbol" required onChange={(e) => {
-                    const value = e.target.value;
-                    setPortfolio(prev => {
-                        if (!prev) return prev;
-                        const assets = prev.assets ? [...prev.assets] : [];
-                        const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
-                        a.symbol = value;
-                        assets[i] = a;
-                        return { ...prev, assets };
-                    });
-                }}/>
-
-
-                <br/>
-                <label htmlFor="assetType">Choose asset type: </label>
-                <select
-                    id="assetType"
-                    name="assetType"
-                    onChange={e => handleAssetTypeChange(i, e.target.value)}>
-                    <option value="stock">Stock</option>
-                    <option value="crypto">Crypto</option>
-                    <option value="cash">Cash</option>
-                </select>
-            </form>
+            <div key={i} className="asset-input-box">
+                <div className="input-row">
+                    <input type="text" placeholder="Asset Name (e.g. Bitcoin)" name="assetName" required onChange={(e) => {
+                        const value = e.target.value;
+                        setPortfolio(prev => {
+                            if (!prev) return prev;
+                            const assets = prev.assets ? [...prev.assets] : [];
+                            const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
+                            a.name = value;
+                            assets[i] = a;
+                            return { ...prev, assets };
+                        });
+                    }}/>
+                    <input type="number" placeholder="Quantity" min={0} step="any" name="assetQuantity" required onChange={(e) => {
+                        const value = parseFloat(e.target.value || '0');
+                        setPortfolio(prev => {
+                            if (!prev) return prev;
+                            const assets = prev.assets ? [...prev.assets] : [];
+                            const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
+                            a.quantity = value;
+                            assets[i] = a;
+                            return { ...prev, assets };
+                        });
+                    }}/>
+                </div>
+                <div className="input-row">
+                    <input type="text" placeholder="Symbol (e.g. BTC)" name="assetSymbol" required onChange={(e) => {
+                        const value = e.target.value;
+                        setPortfolio(prev => {
+                            if (!prev) return prev;
+                            const assets = prev.assets ? [...prev.assets] : [];
+                            const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
+                            a.symbol = value;
+                            assets[i] = a;
+                            return { ...prev, assets };
+                        });
+                    }}/>
+                    <select
+                        id="assetType"
+                        name="assetType"
+                        onChange={e => handleAssetTypeChange(i, e.target.value)}>
+                        <option value="stock">Stock</option>
+                        <option value="crypto">Crypto</option>
+                        <option value="cash">Cash</option>
+                    </select>
+                </div>
+            </div>
         );
     }
 
+    useEffect(() => {
+        const total = portfolios.reduce(
+            (sum: number, portfolio: any) => sum + portfolio.value,
+            0
+        );
+        setUserNetWorth(total);
+    }, [portfolios]);
+
+
     return (
-        <div>
+        <div className="app-container">
             <nav>
                 <Link to="/login">login</Link>
                 <Link to="/register">register</Link>
             </nav>
 
-
-            <div className="welcome">
-                <h1>Dashboard</h1>
-                <p>Welcome to the dashboard!</p>
+            <div className="header-stats">
+                <div className="net-worth-box">
+                    Net Worth: <span>${userNetWorth.toFixed(2)}</span>
+                </div>
+                <div className="welcome">
+                    <h1>Dashboard</h1>
+                    <p>Welcome to your portfolio manager!</p>
+                </div>
             </div>
 
-
-            <button onClick={openForm}>Add portfolio</button>
-
-            {isVisible && (<div>
-                    <form onSubmit={handleAddPortfolio}>
-                        <label></label>
-                        <input type="text" placeholder="Portfolio Name" name="portfolioName" required
-                               onChange={(e) => {
-                                   setPortfolio(prev => ({ ...(prev ?? { assets: [] }), name: e.target.value }));
-                               }}/>
-                        <button type="submit">Apply</button>
-
-                    </form>
-                    <button onClick={addAsset}>Add asset</button>
-
-                    {portfolio?.assets?.map((asset, i) => (
-                        assetForm(asset, i)
-                    ))}
-            </div>
+            <div className="controls">
+                {/* Hide 'Add Portfolio' button when form is open */}
+                {!isVisible && (
+                    <button onClick={openForm} className="primary-btn">Add Portfolio</button>
                 )}
+            </div>
 
+            {isVisible && (
+                <div className="form-container">
+                    <div className="form-header">
+                        <h2>Create New Portfolio</h2>
+                        {/* Cancel button to close form */}
+                        <button type="button" onClick={() => setIsVisible(false)} className="cancel-btn">Cancel</button>
+                    </div>
 
-            <h2>Your Portfolios</h2>
+                    <form onSubmit={handleAddPortfolio} className="add-portfolio-form">
+                        <input
+                            type="text"
+                            placeholder="Portfolio Name"
+                            name="portfolioName"
+                            required
+                            onChange={(e) => {
+                                setPortfolio(prev => ({ ...(prev ?? { assets: [] }), name: e.target.value }));
+                            }}
+                        />
+                        <button type="button" onClick={addAsset} className="secondary-btn">+ Add Asset</button>
+                        <button type="submit" className="success-btn">Save Portfolio</button>
+                    </form>
 
-            {portfolios.map((portfolio: any) => (
-                <div className="box" key={portfolio.id}>
-                    <h3>{portfolio.name}</h3>
-
-                    { (portfolio.assets || []).map((asset: Asset) => (
-                        <li key={asset.id} className="portfolioList">
-                            <strong>{asset.name} ({asset.symbol})</strong>
-                            <br />
-                            Type: {asset.type}, Quantity: {asset.quantity}
-                            {asset.currentPrice !== undefined && asset.currentPrice !== null && `, Current Price: $${asset.currentPrice.toFixed(2)}`}
-                            <br />
-                            value: ${( (asset.currentPrice ?? 0) * (asset.quantity ?? 0) ).toFixed(2)}
-                        </li>
-                    ))}
-
-
-
-
-                    <div className="deleteButton">
-                        <button onClick={() => handleDeletePortfolio(portfolio.id)}>Delete</button>
+                    <div className="asset-forms-container">
+                        {portfolio?.assets?.map((asset, i) => (
+                            assetForm(asset, i)
+                        ))}
                     </div>
                 </div>
+            )}
+            <h2>Your Portfolios</h2>
 
-            ))}
+            {/* DASHBOARD GRID */}
+            <div className="dashboard-grid">
+                {portfolios.map((portfolio: any) => (
+                    <div className="portfolio-box" key={portfolio.id}>
 
+                        <div className="portfolio-header">
+                            <h3>{portfolio.name}</h3>
+                            <span className="portfolio-total">Total Value: ${portfolio.value.toFixed(2)}</span>
+                        </div>
+
+                        {/* ASSET LIST (Scrollable if 5+ assets) */}
+                        <div className="asset-list">
+                            {(portfolio.assets || []).map((asset: Asset, index: number) => (
+                                <div key={asset.id || index} className="asset-block">
+                                    <div className="asset-name">
+                                        {asset.name} <span className="symbol">({asset.symbol})</span>
+                                    </div>
+
+                                    {asset.error === 'INVALID_SYMBOL' ? (
+                                        <div className="error-text">Invalid Symbol</div>
+                                    ) : asset.error ? (
+                                        <div className="warning-text">Price unavailable</div>
+                                    ) : (
+                                        <div className="asset-details-grid">
+                                            <div className="asset-detail"><span className="label">Type:</span> {asset.type}</div>
+                                            <div className="asset-detail"><span className="label">Qty:</span> {asset.quantity}</div>
+                                            <div className="asset-detail"><span className="label">Price:</span> ${asset.currentPrice?.toFixed(2)}</div>
+                                            <div className="asset-detail value-highlight"><span className="label">Value:</span> ${( (asset.currentPrice ?? 0) * (asset.quantity ?? 0) ).toFixed(2)}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="portfolio-actions">
+                            <button className="delete-btn" onClick={() => handleDeletePortfolio(portfolio.id)}>Delete Portfolio</button>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };

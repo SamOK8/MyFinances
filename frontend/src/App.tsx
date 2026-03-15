@@ -5,6 +5,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import {useEffect} from "react";
 import './App.css'
+import './index.css'
 
 function App() {
     const navigate = useNavigate();

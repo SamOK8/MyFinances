@@ -13,4 +13,5 @@ public class PortfolioDTO {
     private String name;
     private User user;
     private Set<AssetDTO> assets;
+    private int value;
 }
