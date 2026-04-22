@@ -1,5 +1,5 @@
-import {Link} from "react-router-dom";
-import {useEffect, useState} from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 // import '.src/App.css';
 
 interface Portfolio {
@@ -26,6 +26,7 @@ interface Asset {
 }
 
 const Dashboard = () => {
+    const navigate = useNavigate();
     const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
     const [portfolio, setPortfolio] = useState<Portfolio>();
     // const [selectedAsset, setSelectedAsset] = useState<string>('stock');
@@ -37,6 +38,11 @@ const Dashboard = () => {
 
 
 
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        navigate("/login");
+    };
 
     async function fetchPortfolioData() {
 
@@ -52,12 +58,18 @@ const Dashboard = () => {
 
             const data = await response.json();
 
-            setPortfolios(data);
-            console.log(portfolios);
-            console.log(data);
+            if (response.status === 401 || response.status === 403) {
+                handleLogout();
+                return;
+            }
+
             if (!response.ok) {
                 throw new Error(response.statusText);
             }
+
+            setPortfolios(data);
+            console.log(portfolios);
+            console.log(data);
 
         } catch (err: any) {
             console.error(err.message);
@@ -80,6 +92,11 @@ const Dashboard = () => {
                 }
             });
 
+            if (response.status === 401 || response.status === 403) {
+                handleLogout();
+                return;
+            }
+
             if (response.ok) {
                 setPortfolios(portfolios.filter(portfolio => portfolio.id !== id));
 
@@ -92,17 +109,26 @@ const Dashboard = () => {
         }
     };
 
-    const handleAddPortfolio = async (e: React.FormEvent) => {
+    const handleSavePortfolio = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const response = await fetch(`${apiUrl}/api/portfolio/add`, {
-                method: "POST",
+            const isEditing = !!portfolio?.id;
+            const url = isEditing ? `${apiUrl}/api/portfolio/${portfolio.id}` : `${apiUrl}/api/portfolio/add`;
+            const method = isEditing ? "PUT" : "POST";
+
+            const response = await fetch(url, {
+                method: method,
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${localStorage.getItem("token")}`
                 },
                 body: JSON.stringify(portfolio)
             });
+
+            if (response.status === 401 || response.status === 403) {
+                handleLogout();
+                return;
+            }
 
             if (response.ok) {
                 fetchPortfolioData();
@@ -111,16 +137,19 @@ const Dashboard = () => {
             } else {
                 throw new Error(response.statusText);
             }
-        }catch (err: any) {
-            console.error("Failed to add portfolio: " + err.message);
-            setError("Failed to add portfolio");
+        } catch (err: any) {
+            console.error("Failed to save portfolio: " + err.message);
+            setError("Failed to save portfolio");
         }
 
     };
 
-    // const handleEditPortfolio = async (id: number) => {
-    //
-    // }
+    const handleEditClick = (p: Portfolio) => {
+        // Deep copy assets to prevent mutating dashboard state directly before saving
+        const pCopy = JSON.parse(JSON.stringify(p));
+        setPortfolio(pCopy);
+        setIsVisible(true);
+    };
 
 
 
@@ -134,7 +163,7 @@ const Dashboard = () => {
         });
     }
 
-    function openForm(){
+    function openForm() {
         const newPortfolio: Portfolio = { assets: [] };
         setPortfolio(newPortfolio);
         setIsVisible(true);
@@ -148,48 +177,57 @@ const Dashboard = () => {
         });
     }
 
-    function assetForm(_asset: Asset, i: number){
+    function assetForm(_asset: Asset, i: number) {
         return (
             <div key={i} className="asset-input-box">
                 <div className="input-row">
-                    <input type="text" placeholder="Asset Name (e.g. Bitcoin)" name="assetName" required onChange={(e) => {
-                        const value = e.target.value;
-                        setPortfolio(prev => {
-                            if (!prev) return prev;
-                            const assets = prev.assets ? [...prev.assets] : [];
-                            const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
-                            a.name = value;
-                            assets[i] = a;
-                            return { ...prev, assets };
-                        });
-                    }}/>
-                    <input type="number" placeholder="Quantity" min={0} step="any" name="assetQuantity" required onChange={(e) => {
-                        const value = parseFloat(e.target.value || '0');
-                        setPortfolio(prev => {
-                            if (!prev) return prev;
-                            const assets = prev.assets ? [...prev.assets] : [];
-                            const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
-                            a.quantity = value;
-                            assets[i] = a;
-                            return { ...prev, assets };
-                        });
-                    }}/>
+                    <input type="text" placeholder="Asset Name (e.g. Bitcoin)" name="assetName" required
+                        value={_asset.name || ""}
+                        onChange={(e) => {
+                            const value = e.target.value;
+                            setPortfolio(prev => {
+                                if (!prev) return prev;
+                                const assets = prev.assets ? [...prev.assets] : [];
+                                const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
+                                a.name = value;
+                                assets[i] = a;
+                                return { ...prev, assets };
+                            });
+                        }} />
+                    <input type="number" placeholder="Quantity" min={0} step="any" name="assetQuantity" required
+                        value={_asset.quantity || ""}
+                        onChange={(e) => {
+                            const value = parseFloat(e.target.value || '0');
+                            setPortfolio(prev => {
+                                if (!prev) return prev;
+                                const assets = prev.assets ? [...prev.assets] : [];
+                                const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
+                                a.quantity = value;
+                                assets[i] = a;
+                                return { ...prev, assets };
+                            });
+                        }} />
                 </div>
                 <div className="input-row">
-                    <input type="text" placeholder="Symbol (e.g. BTC)" name="assetSymbol" required onChange={(e) => {
-                        const value = e.target.value;
-                        setPortfolio(prev => {
-                            if (!prev) return prev;
-                            const assets = prev.assets ? [...prev.assets] : [];
-                            const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
-                            a.symbol = value;
-                            assets[i] = a;
-                            return { ...prev, assets };
-                        });
-                    }}/>
+                    {_asset.type !== 'cash' && (
+                        <input type="text" placeholder="Symbol (e.g. BTC)" name="assetSymbol" required
+                            value={_asset.symbol || ""}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setPortfolio(prev => {
+                                    if (!prev) return prev;
+                                    const assets = prev.assets ? [...prev.assets] : [];
+                                    const a = assets[i] ? { ...assets[i] } : { name: '', quantity: 0, symbol: '', type: 'stock' };
+                                    a.symbol = value;
+                                    assets[i] = a;
+                                    return { ...prev, assets };
+                                });
+                            }} />
+                    )}
                     <select
                         id="assetType"
                         name="assetType"
+                        value={_asset.type || "stock"}
                         onChange={e => handleAssetTypeChange(i, e.target.value)}>
                         <option value="stock">Stock</option>
                         <option value="crypto">Crypto</option>
@@ -209,11 +247,41 @@ const Dashboard = () => {
     }, [portfolios]);
 
 
+    const renderFormContent = () => (
+        <>
+            <div className="form-header">
+                <h2>{portfolio?.id ? "Edit Portfolio" : "Create New Portfolio"}</h2>
+                {/* Cancel button to close form */}
+                <button type="button" onClick={() => setIsVisible(false)} className="cancel-btn">Cancel</button>
+            </div>
+
+            <form onSubmit={handleSavePortfolio} className="add-portfolio-form">
+                <input
+                    type="text"
+                    placeholder="Portfolio Name"
+                    name="portfolioName"
+                    value={portfolio?.name || ""}
+                    required
+                    onChange={(e) => {
+                        setPortfolio(prev => ({ ...(prev ?? { assets: [] }), name: e.target.value }));
+                    }}
+                />
+                <button type="button" onClick={addAsset} className="secondary-btn">+ Add Asset</button>
+                <button type="submit" className="success-btn">{portfolio?.id ? "Update Portfolio" : "Save Portfolio"}</button>
+            </form>
+
+            <div className="asset-forms-container">
+                {portfolio?.assets?.map((asset, i) => (
+                    assetForm(asset, i)
+                ))}
+            </div>
+        </>
+    );
+
     return (
         <div className="app-container">
             <nav>
-                <Link to="/login">login</Link>
-                <Link to="/register">register</Link>
+                <button className="secondary-btn" onClick={handleLogout}>Logout</button>
             </nav>
 
             <div className="header-stats">
@@ -233,35 +301,25 @@ const Dashboard = () => {
                 )}
             </div>
 
-            {isVisible && (
-                <div className="form-container">
-                    <div className="form-header">
-                        <h2>Create New Portfolio</h2>
-                        {/* Cancel button to close form */}
-                        <button type="button" onClick={() => setIsVisible(false)} className="cancel-btn">Cancel</button>
+            {isVisible ? (
+                portfolio?.id ? (
+                    <div className="modal-overlay" style={{
+                        position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex',
+                        alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                    }}>
+                        <div className="form-container" style={{
+                            maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto'
+                        }}>
+                            {renderFormContent()}
+                        </div>
                     </div>
-
-                    <form onSubmit={handleAddPortfolio} className="add-portfolio-form">
-                        <input
-                            type="text"
-                            placeholder="Portfolio Name"
-                            name="portfolioName"
-                            required
-                            onChange={(e) => {
-                                setPortfolio(prev => ({ ...(prev ?? { assets: [] }), name: e.target.value }));
-                            }}
-                        />
-                        <button type="button" onClick={addAsset} className="secondary-btn">+ Add Asset</button>
-                        <button type="submit" className="success-btn">Save Portfolio</button>
-                    </form>
-
-                    <div className="asset-forms-container">
-                        {portfolio?.assets?.map((asset, i) => (
-                            assetForm(asset, i)
-                        ))}
+                ) : (
+                    <div className="form-container">
+                        {renderFormContent()}
                     </div>
-                </div>
-            )}
+                )
+            ) : null}
             <h2>Your Portfolios</h2>
 
             {/* DASHBOARD GRID */}
@@ -279,7 +337,7 @@ const Dashboard = () => {
                             {(portfolio.assets || []).map((asset: Asset, index: number) => (
                                 <div key={asset.id || index} className="asset-block">
                                     <div className="asset-name">
-                                        {asset.name} <span className="symbol">({asset.symbol})</span>
+                                        {asset.name} {asset.type !== 'cash' && asset.symbol && <span className="symbol">({asset.symbol})</span>}
                                     </div>
 
                                     {asset.error === 'INVALID_SYMBOL' ? (
@@ -291,7 +349,7 @@ const Dashboard = () => {
                                             <div className="asset-detail"><span className="label">Type:</span> {asset.type}</div>
                                             <div className="asset-detail"><span className="label">Qty:</span> {asset.quantity}</div>
                                             <div className="asset-detail"><span className="label">Price:</span> ${asset.currentPrice?.toFixed(2)}</div>
-                                            <div className="asset-detail value-highlight"><span className="label">Value:</span> ${( (asset.currentPrice ?? 0) * (asset.quantity ?? 0) ).toFixed(2)}</div>
+                                            <div className="asset-detail value-highlight"><span className="label">Value:</span> ${((asset.currentPrice ?? 0) * (asset.quantity ?? 0)).toFixed(2)}</div>
                                         </div>
                                     )}
                                 </div>
@@ -299,6 +357,7 @@ const Dashboard = () => {
                         </div>
 
                         <div className="portfolio-actions">
+                            <button className="primary-btn" onClick={() => handleEditClick(portfolio)} style={{ marginRight: '1rem' }}>Edit Portfolio</button>
                             <button className="delete-btn" onClick={() => handleDeletePortfolio(portfolio.id)}>Delete Portfolio</button>
                         </div>
                     </div>

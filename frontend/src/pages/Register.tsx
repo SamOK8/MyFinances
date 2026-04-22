@@ -36,6 +36,8 @@ const Register = () => {
             setError("user with email already exists");
         }else if (!response.ok) {
             throw new Error("");
+        } else {
+            navigate("/login");
         }
 
         }catch (err: any) {

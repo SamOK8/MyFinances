@@ -15,5 +15,6 @@ public class Price {
     private Long id;
     private OffsetDateTime timestamp;
     private String symbol;
+    private String type;
     private double price;
 }

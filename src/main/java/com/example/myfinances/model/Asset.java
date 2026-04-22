@@ -1,9 +1,9 @@
 package com.example.myfinances.model;
 
-import com.example.myfinances.AssetType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import java.time.OffsetDateTime;
 
 @Data
 @Entity
@@ -17,6 +17,9 @@ public class Asset {
     private String type;
     private double quantity;
     private String symbol;
+    
+    private boolean archived = false;
+    private OffsetDateTime timestamp;
 
     @ManyToOne
     @JsonIgnore

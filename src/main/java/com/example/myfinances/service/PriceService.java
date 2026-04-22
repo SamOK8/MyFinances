@@ -28,25 +28,25 @@ public class PriceService {
         for (AssetSymbolView asset : assetSymbols) {
             String symbol = asset.getSymbol();
             AssetType assetTypeEnum = AssetType.valueOf(asset.getType().toUpperCase());
-//            String assetType = asset.getAssetType();  // maybe error
+            // String assetType = asset.getAssetType(); // maybe error
 
             try {
-                if (assetTypeEnum == AssetType.CASH){
+                if (assetTypeEnum == AssetType.CASH) {
                     continue;
                 }
                 StockDataDTO stockData = assetService.getPrice(assetTypeEnum, symbol);
 
-//                if ()  // price is same as last price, skip saving to database
-
+                // if () // price is same as last price, skip saving to database
 
                 if (stockData != null) {
                     Price price = new Price();
                     price.setPrice(stockData.getC());
                     price.setSymbol(symbol);
+                    price.setType(assetTypeEnum.name());
                     price.setTimestamp(OffsetDateTime.now());
 
                     priceRepository.save(price);
-                    log.info("Saved new price for {}: {}", symbol, stockData.getC());
+                    log.info("Saved new price for {} ({}): {}", symbol, assetTypeEnum.name(), stockData.getC());
                 }
             } catch (Exception e) {
                 log.info("Failed to fetch or save price for symbol, (probably invalid symbol): {}", symbol, e);

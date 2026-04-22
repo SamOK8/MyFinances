@@ -64,7 +64,13 @@ public class PortfolioController {
             asset.setName(assetDTO.getName());
             asset.setType(assetDTO.getType());
             asset.setQuantity(assetDTO.getQuantity());
-            asset.setSymbol(assetDTO.getSymbol());
+            if ("cash".equalsIgnoreCase(assetDTO.getType())) {
+                asset.setSymbol(null);
+            } else {
+                asset.setSymbol(assetDTO.getSymbol());
+            }
+            asset.setArchived(false);
+            asset.setTimestamp(OffsetDateTime.now());
             asset.setPortfolio(portfolio);
             assets.add(asset);
         }
@@ -80,7 +86,57 @@ public class PortfolioController {
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<PortfolioDTO> updatePortfolio(@PathVariable Long id, @RequestBody PortfolioDTO portfolioDTO, Authentication authentication) {
+        String userEmail = (String) authentication.getPrincipal();
 
+        Portfolio portfolio = portfolioRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Portfolio not found with id: " + id));
+
+        if (!portfolio.getUser().getEmail().equals(userEmail)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not own this portfolio");
+        }
+
+        portfolio.setName(portfolioDTO.getName());
+        
+        // Archive existing active assets
+        if (portfolio.getAssets() != null) {
+            for (Asset currentAsset : portfolio.getAssets()) {
+                if (!currentAsset.isArchived()) {
+                    currentAsset.setArchived(true);
+                    currentAsset.setTimestamp(OffsetDateTime.now());
+                }
+            }
+        } else {
+            portfolio.setAssets(new HashSet<>());
+        }
+
+        // Add new assets (as active)
+        for (AssetDTO assetDTO : portfolioDTO.getAssets()) {
+            Asset newAsset = new Asset();
+            newAsset.setName(assetDTO.getName());
+            newAsset.setType(assetDTO.getType());
+            newAsset.setQuantity(assetDTO.getQuantity());
+            if ("cash".equalsIgnoreCase(assetDTO.getType())) {
+                newAsset.setSymbol(null);
+            } else {
+                newAsset.setSymbol(assetDTO.getSymbol());
+            }
+            newAsset.setArchived(false);
+            newAsset.setTimestamp(OffsetDateTime.now());
+            newAsset.setPortfolio(portfolio);
+            portfolio.getAssets().add(newAsset);
+        }
+
+        Portfolio savedPortfolio = portfolioRepository.save(portfolio);
+        PortfolioDTO responseDTO = new PortfolioDTO();
+        responseDTO.setId(savedPortfolio.getId());
+        responseDTO.setName(savedPortfolio.getName());
+        responseDTO.setUser(savedPortfolio.getUser());
+        responseDTO.setAssets(portfolioDTO.getAssets());
+
+        return ResponseEntity.ok(responseDTO);
+    }
 
 
     @GetMapping("/by-user")     // change to get prices from database
@@ -97,6 +153,7 @@ public class PortfolioController {
             Set<AssetDTO> assetDTOs = new HashSet<>();
             if (portfolioEntity.getAssets() != null) {
                 for (com.example.myfinances.model.Asset assetEntity : portfolioEntity.getAssets()) { // assets
+                    if (assetEntity.isArchived()) continue;
                     AssetDTO assetDTO = new AssetDTO();
                     assetDTO.setId(assetEntity.getId());
                     assetDTO.setName(assetEntity.getName());
@@ -106,8 +163,14 @@ public class PortfolioController {
 
                     try {
                         AssetType assetTypeEnum = AssetType.valueOf(assetEntity.getType().toUpperCase());
+                        if (assetTypeEnum == AssetType.CASH) {
+                            assetDTO.setCurrentPrice(1.0);
+                            assetDTO.setError(null);
+                            assetDTOs.add(assetDTO);
+                            continue;
+                        }
                         // StockDataDTO stockData = assetService.getPrice(assetTypeEnum, assetEntity.getSymbol()); // change to get price from database
-                        Price latestPrice = priceRepository.findFirstBySymbolOrderByTimestampDesc(assetEntity.getSymbol());
+                        Price latestPrice = priceRepository.findFirstBySymbolAndTypeOrderByTimestampDesc(assetEntity.getSymbol(), assetTypeEnum.name());
 
                         if (latestPrice != null) {
                             assetDTO.setCurrentPrice(latestPrice.getPrice());
@@ -121,6 +184,7 @@ public class PortfolioController {
                                 price.setTimestamp(OffsetDateTime.now());
                                 price.setPrice(stockData.getC());
                                 price.setSymbol(assetEntity.getSymbol());
+                                price.setType(assetTypeEnum.name());
                                 priceRepository.save(price);
                             }
 
